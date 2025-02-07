@@ -1,0 +1,38 @@
+---
+title: "AS Description"
+author: "Ilya Ilin"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    theme: cerulean
+    highlight: tango
+---
+
+
+### `AS-1-Underlying-Starts.R`
+
+Cleans raw data file `app-underlying-data-app-starts-202324-q1.csv` in this sequence:
+
+- Removes unneeded columns and missing AS.
+- Aggregates to *quarterly* time frequency.
+- Aggregates to *TTWA* geography.
+
+#### Notes - **CHECK**!
+
+1. Assumes LAD 2015 geography for AS starts.
+2. Multiplies starts by shares LAD shares.
+
+### `AS-2-Skills Starts.R`
+
+**Disaggregates** AS starts to AS Skills starts by **joining AS descriptions** to AS starts.
+
+#### Notes - **CHECK**
+
+42 AS that are in starts are not in the current classification mostly because they've been discontinued. 50 are in classification but are not in starts.
+
+### `AS-3-Imputing Zero Values.R`
+
+Some **geographies have no starts** in a given period, so impute zeroes for different classifications only. This results in 13020 - 8922 = 4098 additional zero observations.
