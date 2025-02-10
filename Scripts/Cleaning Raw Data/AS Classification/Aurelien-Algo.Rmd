@@ -1,0 +1,80 @@
+---
+title: "Aurelien Classification Steps"
+author: "Ilya Ilin"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    theme: cerulean
+    highlight: tango
+---
+
+# Email contents
+
+
+The algo has two steps. The first one classifies each skill as "Climate-specific", "Green non-climate" or "Not climate-specific, not green". I've added the full prompts below. Note that I mention European Union's Taxonomy 2021/2139 - happy to switch to a UK-specific source if you prefer. This step is run once on Claude Haiku 3.5, as it's run on the whole dataset and is therefore quite costly.
+ 
+The second step refines the classification and seeks to eliminate false positives. It's only run on "Climate-specific" and "Green non-climate" skills.  In the current version of the algo, the detailed categories are as follow (direct quote from the LLM prompt):
+Decarbonization-energy: this skill is essential and specific to the reduction of greenhouse gas emissions, related to energy generation, transmission or distribution
+Decarbonization-transport: this skill is essential and specific to the reduction of greenhouse gas emissions related to transportation, including public transportation
+Decarbonization-buildings: this skill is essential and specific to the decarbonization of buildings, e.g. housing, house appliances or related end-user applications
+Decarbonization-industry: this skill is essential and specific to the reduction of greenhouse gas emissions related to industrial processes and production
+Climate-CCS: this skill is essential and specific to the capture, storage, sequestration or disposal of greenhouse gases. Make sure this is not actually a fossil-fuel related skill.
+Climate-adaptation: this skill is essential and specific to adaptation to climate change adaptation
+Climate-general: this skill contains the word 'Climate', 'Greenhouse gas' or 'Emissions' and does not fit in any of the above categories.
+Waste-management: this skill is helping with waste (solid or water) management but is not specific to climate change mitigation or adaptation
+Forestry-ecosystem-management: this skill is helping with forest and ecosystem management but is not specific to climate change mitigation or adaptation.
+Environmental-protection: this skill contributes to the protection of the environment, preserving natural habitats and ecosystems, minimizing human activities impacts and protecting endangered species and biodiversity.
+Sustainability: this skill is actively contributing to sustainable development and does not fit in any of the above categories.
+Not-climate-nor-green-related: this skill is not climate-specific or green-specific enough to be classified in any of the above categories. 
+This second step is run 5 times on Claude Sonnet 3.5 (their most powerful, albeit also most expensive model), to get a sense of how certain the LLM is of its classification. Thus you'll see a column runs_agreeing  in the attached dataset, which indicates how many of the five runs agreed with the given classification on that row. By construction, this is of course constrained between 1 (minority report) and 5 (unanimity).
+ 
+Looking at the example skills you highlighted:
+ST0154 / S19 gets classified as Decarbonization-energy in 5 out of 5 runs
+ST0303 / S20 gets classified as Decarbonization-building in 5 out of 5 runs
+However ST0152 / S14 gets classified as Not-climate-nor-green-related in 5 out of 5 runs. My guess is that the occupation overview and description may be too broad (since it includes traditional electrician roles).
+Could you both please examine the results attached? Based on this, we'll decide whether to adjust the prompts for our purposes, or whether to manually correct the outcomes we deem erroneous (only if there's a handful of them).
+ 
+Cheers,
+Aurélien
+ 
+## First step prompt
+ 
+You're considering skills in Apprenticeship Standards, and you want to identify skills that are core and specific to climate change mitigation or adaptation on the one hand, and those that are linked to other non-climate green endeavours such as forestry, waste management or sustainability/sustainable development. To this end, you must follow the criteria defined by the European Union's Taxonomy - more specifically, the Commission Delegated Regulation (EU) 2021/2139. 
+ 
+Consider the apprenticeship standard "{standard_name}". Enrolling on this apprenticeship would prepare you for any of the following occupations: {job_titles}. This apprenticeship would prepare you to perform the following role: {overview_of_role}. 
+ 
+Now consider the skill described by: "{skill_desc}". Would you consider it a core skill for climate change mitigation or adaptation, or non-climate green?
+ 
+Remember it cannot broad or generic, cannot have multiple other applications and has to be extremely characteristic of climate change mitigation or adaptation, or of non-climate environmental goals. In particular, every single skill classified under a climate-core skill must also be considered as contributing directly to climate change mitigation or adaptation. Make sure to include the core skills that contribute directly to the decarbonization of power generation (e.g. smart grids and battery storage), transportation (e.g. electric vehicles and public transportation), buildings (e.g. weatherization and heat pumps), industry (e.g. clean hydrogen production) and agriculture.
+ 
+Every green non-climate skill has to actively contribute to environmental preservation or sustainable development.
+ 
+Thus you should simply answer with "Climate-specific", "Green non-climate" or "Not climate-specific, not green". No additional text.
+ 
+## Second step prompt
+ 
+You're considering apprenticeship standard skill, and you want to identify skills that are specific to climate change mitigation or adaptation. 
+ 
+Consider the apprenticeship standard "{standard_name}". Enrolling on this apprenticeship would prepare you for any of the following occupations: {job_titles}. This apprenticeship would prepare you to perform the following role: {overview_of_role}. 
+ 
+Now consider the skill described by: "{skill_desc}". Would you consider it a core skill for climate change mitigation or adaptation, or non-climate green?
+ 
+Classify it in one of the categories below. It is very important that if the skill description is broad, and not specific to decarbonized energy, decarbonized transportation, decarbonized industry, decarbonized or reduced buildings energy use or adaptation to climate change, you should label it as Not-climate-related.
+ 
+    - Decarbonization-energy: this skill is essential and specific to the reduction of greenhouse gas emissions, related to energy generation, transmission or distribution
+    - Decarbonization-transport: this skill is essential and specific to the reduction of greenhouse gas emissions related to transportation, including public transportation
+    - Decarbonization-buildings: this skill is essential and specific to the decarbonization of buildings, e.g. housing, house appliances or related end-user applications
+    - Decarbonization-industry: this skill is essential and specific to the reduction of greenhouse gas emissions related to industrial processes and production
+    - Climate-CCS: this skill is essential and specific to the capture, storage, sequestration or disposal of greenhouse gases. Make sure this is not actually a fossil-fuel related skill.
+    - Climate-adaptation: this skill is essential and specific to adaptation to climate change adaptation
+    - Climate-general: this skill contains the word 'Climate', 'Greenhouse gas' or 'Emissions' and does not fit in any of the above categories.
+    - Waste-management: this skill is helping with waste (solid or water) management but is not specific to climate change mitigation or adaptation
+    - Forestry-ecosystem-management: this skill is helping with forest and ecosystem management but is not specific to climate change mitigation or adaptation.
+    - Environmental-protection: this skill contributes to the protection of the environment, preserving natural habitats and ecosystems, minimizing human activities impacts and protecting endangered species and biodiversity.
+    - Sustainability: this skill is actively contributing to sustainable development and does not fit in any of the above categories.
+    - Not-climate-nor-green-related: this skill is not climate-specific or green-specific enough to be classified in any of the above categories. 
+ 
+Simply answer with "Decarbonization-energy", "Decarbonization-transport", "Decarbonization-buildings", "Decarbonization-industry", "Climate-CCS", "Climate-adaptation", "Waste-management", "Forestry-ecosystem-management", "Sustainability", "Environmental-protection" or "Not-climate-nor-green-related". No additional text.
