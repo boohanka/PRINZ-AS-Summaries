@@ -21,3 +21,16 @@ After manual check in Excel, get the full skills classification.
 
 Simply create a full list of AS skills with tags to identify as low carbon or not. Additionally, classify standards as low carbon, with standard-level skills content.
 
+### `AS-2-SOC.R`
+
+Using the assigned classification from, obtain the crosswalk between low carbon standards and their SOC occupations, manually verifying the low carbon classification from the `.pdf` guidelines.
+
+#### Notes
+
+There are 39 (40 observations because 1 standard is double counted) low carbon standards, and 46 crosswalked items (to do with multiple versions of the file). After taking the most recent version, 39 items remain.
+
+After manually checking the classification, there are **16** inconsistencies.
+
+
+
+

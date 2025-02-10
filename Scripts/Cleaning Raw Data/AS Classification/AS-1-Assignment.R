@@ -90,4 +90,4 @@ exporting_csv <- function(df, name, dir) {
   write.csv(df_exp, file = exp_path, row.names = FALSE)
 }
 
-exporting_csv(df_full, "List AS Skills", "Data 2025/Cleaned/AS")
+exporting_csv(df_full, "List AS Skills", "Data/Cleaned/AS")
