@@ -1,0 +1,21 @@
+# Ignore all files by default
+*
+
+# Allow specific folders and their contents to be tracked
+!Scripts/
+!Scripts/**
+!Outputs/
+!Outputs/**
+
+# Ignore .DS_Store files everywhere
+**/.DS_Store
+
+# Ignore RStudio project-specific files
+.Rproj.user
+.Rhistory
+.RData
+.Rprofile
+
+# Allow this .gitignore file to be tracked
+!.gitignore
+
