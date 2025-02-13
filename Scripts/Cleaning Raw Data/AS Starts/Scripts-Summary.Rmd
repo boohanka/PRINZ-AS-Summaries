@@ -1,5 +1,5 @@
 ---
-title: "AS Description"
+title: "AS Starts"
 author: "Ilya Ilin"
 date: "`r Sys.Date()`"
 output: 
@@ -20,16 +20,16 @@ Cleans raw data file `app-underlying-data-app-starts-202324-q1.csv` in this sequ
 - Aggregates to *quarterly* time frequency.
 - Aggregates to *TTWA* geography.
 
-#### Notes - **CHECK**!
+#### Notes 
 
 1. Assumes LAD 2015 geography for AS starts.
-2. Multiplies starts by shares LAD shares.
+2. Multiplies starts by LAD shares.
 
 ### `AS-2-Skills Starts.R`
 
 **Disaggregates** AS starts to AS Skills starts by **joining AS descriptions** to AS starts.
 
-#### Notes - **CHECK**
+#### Notes 
 
 42 AS that are in starts are not in the current classification mostly because they've been discontinued. 50 are in classification but are not in starts.
 

@@ -1,0 +1,31 @@
+---
+title: "Sample Restriction based on Occupation Data"
+author: "Ilya Ilin"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    theme: cerulean
+    highlight: tango
+---
+
+
+### `SOC-1-Sample Selection.R`
+
+- Upload 4-digit SOC codes from `Data/Raw/Occupations/UKSOC Codes.xlsx`.
+- Generate 3-digit codes and join a crosswalk of 3 digit Minor classifications from `https://www.hesa.ac.uk/collection/coding-manual-tools/sicsocdata/soc-2010#five-digit`.
+- Join the AS SOC codes and generate flags for potential qualifiers in the sample:
+  1. All occupations that are part of 3-digit Minor groups that appear in LC AS.
+  2. All occupations whose SOC code does not begin with 1 or 2.
+  3. All occupations in the sectors that appear in LC AS.
+  
+#### Notes
+
+Approaches 1, 2, 3 give 100, 262, 58 4-digit occupations, respectively, out of 369 total.
+
+### `SOC-2-Education Requirements.R`
+
+Add education requirements from `Data/Raw/Occupations/UKSOC Education Requirements.xlsx`, flagging those SOC codes that require a PhD or Level 6.
+

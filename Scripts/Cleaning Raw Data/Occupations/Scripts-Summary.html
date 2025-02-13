@@ -13,7 +13,7 @@
 
 <meta name="date" content="2025-02-13" />
 
-<title>AS Classification</title>
+<title>Sample Restriction based on Occupation Data</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -321,40 +321,42 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">AS Classification</h1>
+<h1 class="title toc-ignore">Sample Restriction based on Occupation
+Data</h1>
 <h4 class="author">Ilya Ilin</h4>
 <h4 class="date">2025-02-13</h4>
 
 </div>
 
 
-<div id="obtaining-classification" class="section level3">
-<h3>Obtaining Classification</h3>
-<p>Using Aurelien’s classification, keep low carbon skills in
-Decarbonization-Industry, Buildings, Transport, and Energy. Also keep
-Climate CCS and possibly Climate-general.</p>
-<p>After manual check in Excel, get the full skills classification.</p>
-</div>
-<div id="as-1-assignment.r" class="section level3">
-<h3><code>AS-1-Assignment.R</code></h3>
-<p>Simply create a full list of AS skills with tags to identify as low
-carbon or not. Additionally, classify standards as low carbon, with
-standard-level skills content.</p>
-</div>
-<div id="as-2-soc.r" class="section level3">
-<h3><code>AS-2-SOC.R</code></h3>
-<p>Using the assigned classification from, obtain the crosswalk between
-low carbon standards and their SOC occupations, manually verifying the
-low carbon classification from the <code>.pdf</code> guidelines.</p>
+<div id="soc-1-sample-selection.r" class="section level3">
+<h3><code>SOC-1-Sample Selection.R</code></h3>
+<ul>
+<li>Upload 4-digit SOC codes from
+<code>Data/Raw/Occupations/UKSOC Codes.xlsx</code>.</li>
+<li>Generate 3-digit codes and join a crosswalk of 3 digit Minor
+classifications from
+<code>https://www.hesa.ac.uk/collection/coding-manual-tools/sicsocdata/soc-2010#five-digit</code>.</li>
+<li>Join the AS SOC codes and generate flags for potential qualifiers in
+the sample:
+<ol style="list-style-type: decimal">
+<li>All occupations that are part of 3-digit Minor groups that appear in
+LC AS.</li>
+<li>All occupations whose SOC code does not begin with 1 or 2.</li>
+<li>All occupations in the sectors that appear in LC AS.</li>
+</ol></li>
+</ul>
 <div id="notes" class="section level4">
 <h4>Notes</h4>
-<p>There are 39 (40 observations because 1 standard is double counted)
-low carbon standards, and 46 crosswalked items (to do with multiple
-versions of the file). After taking the most recent version, 39 items
-remain.</p>
-<p>After manually checking the classification, there are
-<strong>16</strong> inconsistencies.</p>
+<p>Approaches 1, 2, 3 give 100, 262, 58 4-digit occupations,
+respectively, out of 369 total.</p>
 </div>
+</div>
+<div id="soc-2-education-requirements.r" class="section level3">
+<h3><code>SOC-2-Education Requirements.R</code></h3>
+<p>Add education requirements from
+<code>Data/Raw/Occupations/UKSOC Education Requirements.xlsx</code>,
+flagging those SOC codes that require a PhD or Level 6.</p>
 </div>
 
 
