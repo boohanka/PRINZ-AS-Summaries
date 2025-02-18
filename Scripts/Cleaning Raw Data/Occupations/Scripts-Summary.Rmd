@@ -25,7 +25,25 @@ output:
 
 Approaches 1, 2, 3 give 100, 262, 58 4-digit occupations, respectively, out of 369 total.
 
-### `SOC-2-Education Requirements.R`
+### `SOC-2-LFS Weights.R`
 
-Add education requirements from `Data/Raw/Occupations/UKSOC Education Requirements.xlsx`, flagging those SOC codes that require a PhD or Level 6.
+Creates and exports the distribution of occupations started 2015-2020. The steps involve:
+
+- Filtering the observations that started employment in the periods 2015-2017 and 2018-2020 and are *still employed* during the survey (cannot be the case that employment is started in 2015 and ended shortly after, for example).
+- Group by SOC3D and sum weights. 
+- Normalise the weights for each period, creating a distribution of difference 3 digit occupations.
+- Create average weight summarising information on both periods.
+
+
+#### Notes
+
+All observations that have -8 (No Answer) or -9 (N/A) in occupation codes are removed. Average weight between the two periods is calculated as simple *mean of the weights*.
+
+### `SOC-3-Combining Occupation Info.R`
+
+In addition to the different flags, add **education requirements** and the **LFS weights** to the occupations from `SOC-1-Sample Selection.R`.
+
+- Add education requirements from `Data/Raw/Occupations/UKSOC Education Requirements.xlsx`, flagging those SOC codes that require a PhD or Level 6.
+- Join the LFS weights from `SOC-2-LFS Weights.R` at 3 digit level.
+
 

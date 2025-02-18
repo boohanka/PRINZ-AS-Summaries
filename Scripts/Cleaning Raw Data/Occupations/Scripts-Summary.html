@@ -11,7 +11,7 @@
 
 <meta name="author" content="Ilya Ilin" />
 
-<meta name="date" content="2025-02-13" />
+<meta name="date" content="2025-02-18" />
 
 <title>Sample Restriction based on Occupation Data</title>
 
@@ -324,7 +324,7 @@ display: none;
 <h1 class="title toc-ignore">Sample Restriction based on Occupation
 Data</h1>
 <h4 class="author">Ilya Ilin</h4>
-<h4 class="date">2025-02-13</h4>
+<h4 class="date">2025-02-18</h4>
 
 </div>
 
@@ -352,11 +352,37 @@ LC AS.</li>
 respectively, out of 369 total.</p>
 </div>
 </div>
-<div id="soc-2-education-requirements.r" class="section level3">
-<h3><code>SOC-2-Education Requirements.R</code></h3>
-<p>Add education requirements from
+<div id="soc-2-lfs-weights.r" class="section level3">
+<h3><code>SOC-2-LFS Weights.R</code></h3>
+<p>Creates and exports the distribution of occupations started
+2015-2020. The steps involve:</p>
+<ul>
+<li>Filtering the observations that started employment in the periods
+2015-2017 and 2018-2020 and are <em>still employed</em> during the
+survey (cannot be the case that employment is started in 2015 and ended
+shortly after, for example).</li>
+<li>Group by SOC3D and sum weights.</li>
+<li>Normalise the weights for each period, creating a distribution of
+difference 3 digit occupations.</li>
+</ul>
+<div id="notes-1" class="section level4">
+<h4>Notes</h4>
+<p>All observations that have -8 (No Answer) or -9 (N/A) in occupation
+codes are removed.</p>
+</div>
+</div>
+<div id="soc-3-combining-occupation-info.r" class="section level3">
+<h3><code>SOC-3-Combining Occupation Info.R</code></h3>
+<p>In addition to the different flags, add <strong>education
+requirements</strong> and the <strong>LFS weights</strong> to the
+occupations from <code>SOC-1-Sample Selection.R</code>.</p>
+<ul>
+<li>Add education requirements from
 <code>Data/Raw/Occupations/UKSOC Education Requirements.xlsx</code>,
-flagging those SOC codes that require a PhD or Level 6.</p>
+flagging those SOC codes that require a PhD or Level 6.</li>
+<li>Join the LFS weights from <code>SOC-2-LFS Weights.R</code> at 3
+digit level.</li>
+</ul>
 </div>
 
 
