@@ -364,11 +364,13 @@ shortly after, for example).</li>
 <li>Group by SOC3D and sum weights.</li>
 <li>Normalise the weights for each period, creating a distribution of
 difference 3 digit occupations.</li>
+<li>Create average weight summarising information on both periods.</li>
 </ul>
 <div id="notes-1" class="section level4">
 <h4>Notes</h4>
 <p>All observations that have -8 (No Answer) or -9 (N/A) in occupation
-codes are removed.</p>
+codes are removed. Average weight between the two periods is calculated
+as simple <em>mean of the weights</em>.</p>
 </div>
 </div>
 <div id="soc-3-combining-occupation-info.r" class="section level3">
