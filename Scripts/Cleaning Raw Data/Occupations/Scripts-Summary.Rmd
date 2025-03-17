@@ -1,5 +1,5 @@
 ---
-title: "Sample Restriction based on Occupation Data"
+title: "Sample Restriction & Occupation Weights"
 author: "Ilya Ilin"
 date: "`r Sys.Date()`"
 output: 
@@ -11,6 +11,85 @@ output:
     highlight: tango
 ---
 
+## Latest Summaries
+
+### `SOC-1-Sample Selection.R`
+
+- Upload 4-digit SOC codes from `Data/Raw/Occupations/UKSOC Codes.xlsx`.
+- Generate 3-digit codes and join a crosswalk of 3 digit Minor classifications from `https://www.hesa.ac.uk/collection/coding-manual-tools/sicsocdata/soc-2010#five-digit`.
+- Join the AS SOC codes and generate flags for potential qualifiers in the sample:
+  1. `flag_as_soc`: indicates whether the SOC is one that has been matched to at least 1 AS, among the **non-degree AS**.
+  2. `flag_sector_soc`: denotes the SOCs that belong to either one of the sectors associated with Decarbonization-buildings/energy/transport, broadly defined within Buildings, Energy, Transport sectors. These are assigned using ChatGPT.
+  3. `flag_educ`: excludes the SOCs whose code begins with "1" or "2" (corresponding to university-level education).
+  
+#### Notes
+
+`flag_educ` appears to be the **only** sensible restriction because:
+
+  1. Reasonable restriction aligning with the range of skills delivered under AS, as though they form **12.63%** of all AS, these account for only **5.55%** of all AS starts.
+  2. Previous approach of considering all the 4 digit SOCs in a 3 digit group, if at least 1 4 digit SOC within the 3 digit group has been mapped to an AS, *without restricting the AS to low carbon AS*, gives 347/369 4 digit SOCs, rendering this restriction useless.
+  3. `flag_sector_soc` fails to adequately capture the sectors and is not replicable.
+  4. Restricting low-skilled occupations, in any way, is counter intuitive, because it is reasonable to conclude that Apprenticeship workers can adequately fill those occupations, even though **they have not directly been trained for these**. For example, SOC codes beginning with "9" have neither been mapped to AS nor are they explicitly a part of the sectors, but could still contain low carbon skills supply/demand relationships, relevant within the scope of AS training.
+
+### `SOC-2-LFS SOC Distribution.R`
+
+Creates and exports the distribution of occupations started 2018-2020. The steps involve:
+
+- Filtering the observations that started employment in the period 2018-2020 and are *still employed* during the survey (cannot be the case that employment is started in 2018 and ended shortly after, for example).
+- Group by SOC3D and sum weights. 
+- Generate the shares of occupations started at 3 digit level.
+
+
+#### Notes
+
+All observations that have -8 (No Answer) or -9 (N/A) in occupation codes are removed. 
+
+### `SOC-3-Lightcast SOC Distribution.R`
+
+Using the full Lightcast dataset, remove all skill level variables to *avoid double counting*. Next, sum the number of job advertisements for each year for the period 2018-2020, across geographies. Using the sums, obtain a distribution of occupations in Lightcast at 4 digit SOC code level.
+
+#### Notes
+
+`n_ads_occ` denotes the total number of ads for each occupation **only 2018-2020**.
+
+### `SOC-4-LFS-Lightcast Weights.R`
+
+Using the distribution of 3 digit SOCs from LFS and 4 digit distribution of SOCs from Lightcast, *create 3 digit SOC weights* to reweight job advertisements.
+
+- Combine the 2 distributions.
+- Change Lightcast distribution to 3 digit level for consistency.
+
+The final output is the 3 digit SOC with a corresponding weight (>1 if underrepresented in Lightcast, relative to LFS).
+
+### `SOC-5-LFS-Combining Weights and Flags.R`
+
+In addition to the different flags, add **education requirements** and the **LFS-Lightcast Weights** to the occupations from `SOC-1-Sample Selection.R`.
+
+- Add education requirements from `Data/Raw/Occupations/UKSOC Education Requirements.xlsx`, flagging those SOC codes that require a PhD or Level 6.
+- Join the occupation weights from `SOC-4-LFS-Lightcast Weights.R` at 3 digit level.
+- Export the final dataset that contains each 4 digit SOC code with Flags and Weights.
+
+#### Notes
+
+Applying the 3 digit SOC weights to a 4 digit level dataset assumes that the distribution of 4 digit SOCs within each 3 digit SOC cell is the consistent across Lightcast and LFS.
+
+### `SOC-6-Sample Selection.R`
+
+Recreates the table from `https://www.lse.ac.uk/granthaminstitute/wp-content/uploads/2023/01/Skills-and-wage-gaps-in-the-low-carbon-transition_Comparing-job-vacancy-data-from-the-US-and-UK.pdf`, at 2 digit SOC level, available in the Outputs folder.
+
+
+
+
+
+
+
+
+
+
+
+<div style="height: 100px;"></div>
+
+## Old Summaries
 
 ### `SOC-1-Sample Selection.R`
 
@@ -25,25 +104,16 @@ output:
 
 Approaches 1, 2, 3 give 100, 262, 58 4-digit occupations, respectively, out of 369 total.
 
-### `SOC-2-LFS Weights.R`
+### `SOC-2-LFS SOC Distribution.R`
 
 Creates and exports the distribution of occupations started 2015-2020. The steps involve:
 
 - Filtering the observations that started employment in the periods 2015-2017 and 2018-2020 and are *still employed* during the survey (cannot be the case that employment is started in 2015 and ended shortly after, for example).
 - Group by SOC3D and sum weights. 
 - Normalise the weights for each period, creating a distribution of difference 3 digit occupations.
-- Create average weight summarising information on both periods.
 
 
 #### Notes
 
-All observations that have -8 (No Answer) or -9 (N/A) in occupation codes are removed. Average weight between the two periods is calculated as simple *mean of the weights*.
-
-### `SOC-3-Combining Occupation Info.R`
-
-In addition to the different flags, add **education requirements** and the **LFS weights** to the occupations from `SOC-1-Sample Selection.R`.
-
-- Add education requirements from `Data/Raw/Occupations/UKSOC Education Requirements.xlsx`, flagging those SOC codes that require a PhD or Level 6.
-- Join the LFS weights from `SOC-2-LFS Weights.R` at 3 digit level.
-
+All observations that have -8 (No Answer) or -9 (N/A) in occupation codes are removed. 
 

@@ -1,0 +1,73 @@
+---
+title: "Ads Cleaning"
+author: "Ilya Ilin"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    theme: cerulean
+    highlight: tango
+---
+
+### Obtaining the Ads
+
+Raw dataset is at:
+
+- **Date**: `year, month`
+- **Geography**: `ttwa11cd, ttwa11nm`
+- **Occupation**: `soc4d_code, soc4d_desc`
+- **Skill**: `skill, low_carbon, green`
+
+Level. The observation variable is the **count of skills appearances in job advertisements**,`n_ads_skill`. In addition, `n_ads_ttwa_occ` denotes the count of appearances of a given SOC.
+
+#### Aurelien's note on the size of the dataset
+
+Note that we lose some observations because of missing geolocation and because of the crosswalks:
+
+- Full UK dataset: 42,318,231 ads
+- Including NUTS3 & market name: 35,153,865 ads
+- Matched in the crosswalks (ie included in the attached dataset): 30,309,742 ads. I'm afraid there's not much we can do about the first loss (ads that don't include geolocation info). Most of the second loss is due to the fact that the TTWA crosswalk only includes England. We still lose 239,717 English ads, but I think that's an acceptable rate (0.8%).
+
+### `Ads-1-Reduce Dataset Size.R`
+
+To work with the large dataset, aggregate the data removing all unnecessary info. Uploading the dataset in chunks for each year:
+
+- Sum all non-low-carbon/green skills into one set of skills.
+- Aggregate to quarterly frequency.
+- Due to the size of each dataset, save these sequentially by year, later collating the years.
+
+#### Notes
+
+### `Ads-2-Merge Classify Aggregate.R`
+
+- Compile the yearly data from `Ads-1-Reduce Dataset Size.R`.
+- Join the skills classification.
+- Aggregate further to the count of ads by **low carbon** classification.
+- Join the flags and weights at occupation level.
+- Create a column for weighted observations.
+- Additionally create separate datasets according to flags (i.e., different ways to align the occupations in ads to the occupations whose skills can reasonably be delivered by AS).
+- Once occupation-level criteria are filtered for, aggregate away the occupation level.
+
+#### Notes
+
+1. The classification is largely accurate and consistent with the AS skills classifications:
+    - Only 3 skills are in Decarbonization-industry and 7 skills in Climate-CCS (some of which include forestry-related skills, such as forest restoration).
+    - Climate-general contains some interesting skills, such as Net Zero policy knowledge, but is outside the scope of analysis.
+    - Retain variation in classifications only for **Decarbonization-buildings/energy/transport/industry**, as in AS.
+  
+2. To align the occupations with AS, use the **Union of Flags 1 & 3 (3 digit SOC & industry alignment), intersected with Flag 2 (removing occupations with degree qualification requirement)**.
+
+### `Ads-3-Time Series.R`
+
+Aggregate the datasets from `Ads-2-Merge Classify Aggregate.R` to a time series and calculate shares of skills advertised. 
+
+#### Notes
+
+Decarbonization-industry had missing ads for some of the quarters, requiring imputing zero values. Given the negligible presence of the Decarbonization-industry skills, remove from future plots.
+
+
+
+
+

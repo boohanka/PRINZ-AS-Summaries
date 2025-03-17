@@ -11,9 +11,9 @@
 
 <meta name="author" content="Ilya Ilin" />
 
-<meta name="date" content="2025-03-17" />
+<meta name="date" content="2025-03-11" />
 
-<title>Sample Restriction &amp; Occupation Weights</title>
+<title>Ads Cleaning</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -321,189 +321,105 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Sample Restriction &amp; Occupation
-Weights</h1>
+<h1 class="title toc-ignore">Ads Cleaning</h1>
 <h4 class="author">Ilya Ilin</h4>
-<h4 class="date">2025-03-17</h4>
+<h4 class="date">2025-03-11</h4>
 
 </div>
 
-<div id="TOC">
+
+<div id="obtaining-the-ads" class="section level3">
+<h3>Obtaining the Ads</h3>
+<p>Raw dataset is at:</p>
 <ul>
-<li><a href="#latest-summaries" id="toc-latest-summaries">Latest
-Summaries</a></li>
-<li><a href="#old-summaries" id="toc-old-summaries">Old
-Summaries</a></li>
+<li><strong>Date</strong>: <code>year, month</code></li>
+<li><strong>Geography</strong>: <code>ttwa11cd, ttwa11nm</code></li>
+<li><strong>Occupation</strong>:
+<code>soc4d_code, soc4d_desc</code></li>
+<li><strong>Skill</strong>: <code>skill, low_carbon, green</code></li>
+</ul>
+<p>Level. The observation variable is the <strong>count of skills
+appearances in job advertisements</strong>,<code>n_ads_skill</code>. In
+addition, <code>n_ads_ttwa_occ</code> denotes the count of appearances
+of a given SOC.</p>
+<div id="aureliens-note-on-the-size-of-the-dataset" class="section level4">
+<h4>Aurelien’s note on the size of the dataset</h4>
+<p>Note that we lose some observations because of missing geolocation
+and because of the crosswalks:</p>
+<ul>
+<li>Full UK dataset: 42,318,231 ads</li>
+<li>Including NUTS3 &amp; market name: 35,153,865 ads</li>
+<li>Matched in the crosswalks (ie included in the attached dataset):
+30,309,742 ads. I’m afraid there’s not much we can do about the first
+loss (ads that don’t include geolocation info). Most of the second loss
+is due to the fact that the TTWA crosswalk only includes England. We
+still lose 239,717 English ads, but I think that’s an acceptable rate
+(0.8%).</li>
 </ul>
 </div>
-
-<div id="latest-summaries" class="section level2">
-<h2>Latest Summaries</h2>
-<div id="soc-1-sample-selection.r" class="section level3">
-<h3><code>SOC-1-Sample Selection.R</code></h3>
+</div>
+<div id="ads-1-reduce-dataset-size.r" class="section level3">
+<h3><code>Ads-1-Reduce Dataset Size.R</code></h3>
+<p>To work with the large dataset, aggregate the data removing all
+unnecessary info. Uploading the dataset in chunks for each year:</p>
 <ul>
-<li>Upload 4-digit SOC codes from
-<code>Data/Raw/Occupations/UKSOC Codes.xlsx</code>.</li>
-<li>Generate 3-digit codes and join a crosswalk of 3 digit Minor
-classifications from
-<code>https://www.hesa.ac.uk/collection/coding-manual-tools/sicsocdata/soc-2010#five-digit</code>.</li>
-<li>Join the AS SOC codes and generate flags for potential qualifiers in
-the sample:
-<ol style="list-style-type: decimal">
-<li><code>flag_as_soc</code>: indicates whether the SOC is one that has
-been matched to at least 1 AS, among the <strong>non-degree
-AS</strong>.</li>
-<li><code>flag_sector_soc</code>: denotes the SOCs that belong to either
-one of the sectors associated with
-Decarbonization-buildings/energy/transport, broadly defined within
-Buildings, Energy, Transport sectors. These are assigned using
-ChatGPT.</li>
-<li><code>flag_educ</code>: excludes the SOCs whose code begins with “1”
-or “2” (corresponding to university-level education).</li>
-</ol></li>
+<li>Sum all non-low-carbon/green skills into one set of skills.</li>
+<li>Aggregate to quarterly frequency.</li>
+<li>Due to the size of each dataset, save these sequentially by year,
+later collating the years.</li>
 </ul>
 <div id="notes" class="section level4">
 <h4>Notes</h4>
-<p><code>flag_educ</code> appears to be the <strong>only</strong>
-sensible restriction because:</p>
-<ol style="list-style-type: decimal">
-<li>Reasonable restriction aligning with the range of skills delivered
-under AS, as though they form <strong>12.63%</strong> of all AS, these
-account for only <strong>5.55%</strong> of all AS starts.</li>
-<li>Previous approach of considering all the 4 digit SOCs in a 3 digit
-group, if at least 1 4 digit SOC within the 3 digit group has been
-mapped to an AS, <em>without restricting the AS to low carbon AS</em>,
-gives 347/369 4 digit SOCs, rendering this restriction useless.</li>
-<li><code>flag_sector_soc</code> fails to adequately capture the sectors
-and is not replicable.</li>
-<li>Restricting low-skilled occupations, in any way, is counter
-intuitive, because it is reasonable to conclude that Apprenticeship
-workers can adequately fill those occupations, even though <strong>they
-have not directly been trained for these</strong>. For example, SOC
-codes beginning with “9” have neither been mapped to AS nor are they
-explicitly a part of the sectors, but could still contain low carbon
-skills supply/demand relationships, relevant within the scope of AS
-training.</li>
-</ol>
 </div>
 </div>
-<div id="soc-2-lfs-soc-distribution.r" class="section level3">
-<h3><code>SOC-2-LFS SOC Distribution.R</code></h3>
-<p>Creates and exports the distribution of occupations started
-2018-2020. The steps involve:</p>
+<div id="ads-2-merge-classify-aggregate.r" class="section level3">
+<h3><code>Ads-2-Merge Classify Aggregate.R</code></h3>
 <ul>
-<li>Filtering the observations that started employment in the period
-2018-2020 and are <em>still employed</em> during the survey (cannot be
-the case that employment is started in 2018 and ended shortly after, for
-example).</li>
-<li>Group by SOC3D and sum weights.</li>
-<li>Generate the shares of occupations started at 3 digit level.</li>
+<li>Compile the yearly data from
+<code>Ads-1-Reduce Dataset Size.R</code>.</li>
+<li>Join the skills classification.</li>
+<li>Aggregate further to the count of ads by <strong>low carbon</strong>
+classification.</li>
+<li>Join the flags and weights at occupation level.</li>
+<li>Create a column for weighted observations.</li>
+<li>Additionally create separate datasets according to flags (i.e.,
+different ways to align the occupations in ads to the occupations whose
+skills can reasonably be delivered by AS).</li>
+<li>Once occupation-level criteria are filtered for, aggregate away the
+occupation level.</li>
 </ul>
 <div id="notes-1" class="section level4">
 <h4>Notes</h4>
-<p>All observations that have -8 (No Answer) or -9 (N/A) in occupation
-codes are removed.</p>
+<ol style="list-style-type: decimal">
+<li>The classification is largely accurate and consistent with the AS
+skills classifications:
+<ul>
+<li>Only 3 skills are in Decarbonization-industry and 7 skills in
+Climate-CCS (some of which include forestry-related skills, such as
+forest restoration).</li>
+<li>Climate-general contains some interesting skills, such as Net Zero
+policy knowledge, but is outside the scope of analysis.</li>
+<li>Retain variation in classifications only for
+<strong>Decarbonization-buildings/energy/transport/industry</strong>, as
+in AS.</li>
+</ul></li>
+<li>To align the occupations with AS, use the <strong>Union of Flags 1
+&amp; 3 (3 digit SOC &amp; industry alignment), intersected with Flag 2
+(removing occupations with degree qualification
+requirement)</strong>.</li>
+</ol>
 </div>
 </div>
-<div id="soc-3-lightcast-soc-distribution.r" class="section level3">
-<h3><code>SOC-3-Lightcast SOC Distribution.R</code></h3>
-<p>Using the full Lightcast dataset, remove all skill level variables to
-<em>avoid double counting</em>. Next, sum the number of job
-advertisements for each year for the period 2018-2020, across
-geographies. Using the sums, obtain a distribution of occupations in
-Lightcast at 4 digit SOC code level.</p>
+<div id="ads-3-time-series.r" class="section level3">
+<h3><code>Ads-3-Time Series.R</code></h3>
+<p>Aggregate the datasets from
+<code>Ads-2-Merge Classify Aggregate.R</code> to a time series and
+calculate shares of skills advertised.</p>
 <div id="notes-2" class="section level4">
 <h4>Notes</h4>
-<p><code>n_ads_occ</code> denotes the total number of ads for each
-occupation <strong>only 2018-2020</strong>.</p>
-</div>
-</div>
-<div id="soc-4-lfs-lightcast-weights.r" class="section level3">
-<h3><code>SOC-4-LFS-Lightcast Weights.R</code></h3>
-<p>Using the distribution of 3 digit SOCs from LFS and 4 digit
-distribution of SOCs from Lightcast, <em>create 3 digit SOC weights</em>
-to reweight job advertisements.</p>
-<ul>
-<li>Combine the 2 distributions.</li>
-<li>Change Lightcast distribution to 3 digit level for consistency.</li>
-</ul>
-<p>The final output is the 3 digit SOC with a corresponding weight
-(&gt;1 if underrepresented in Lightcast, relative to LFS).</p>
-</div>
-<div id="soc-5-lfs-combining-weights-and-flags.r" class="section level3">
-<h3><code>SOC-5-LFS-Combining Weights and Flags.R</code></h3>
-<p>In addition to the different flags, add <strong>education
-requirements</strong> and the <strong>LFS-Lightcast Weights</strong> to
-the occupations from <code>SOC-1-Sample Selection.R</code>.</p>
-<ul>
-<li>Add education requirements from
-<code>Data/Raw/Occupations/UKSOC Education Requirements.xlsx</code>,
-flagging those SOC codes that require a PhD or Level 6.</li>
-<li>Join the occupation weights from
-<code>SOC-4-LFS-Lightcast Weights.R</code> at 3 digit level.</li>
-<li>Export the final dataset that contains each 4 digit SOC code with
-Flags and Weights.</li>
-</ul>
-<div id="notes-3" class="section level4">
-<h4>Notes</h4>
-<p>Applying the 3 digit SOC weights to a 4 digit level dataset assumes
-that the distribution of 4 digit SOCs within each 3 digit SOC cell is
-the consistent across Lightcast and LFS.</p>
-</div>
-</div>
-<div id="soc-6-sample-selection.r" class="section level3">
-<h3><code>SOC-6-Sample Selection.R</code></h3>
-<p>Recreates the table from
-<code>https://www.lse.ac.uk/granthaminstitute/wp-content/uploads/2023/01/Skills-and-wage-gaps-in-the-low-carbon-transition_Comparing-job-vacancy-data-from-the-US-and-UK.pdf</code>,
-at 2 digit SOC level, available in the Outputs folder.</p>
-<div style="height: 100px;">
-
-</div>
-</div>
-</div>
-<div id="old-summaries" class="section level2">
-<h2>Old Summaries</h2>
-<div id="soc-1-sample-selection.r-1" class="section level3">
-<h3><code>SOC-1-Sample Selection.R</code></h3>
-<ul>
-<li>Upload 4-digit SOC codes from
-<code>Data/Raw/Occupations/UKSOC Codes.xlsx</code>.</li>
-<li>Generate 3-digit codes and join a crosswalk of 3 digit Minor
-classifications from
-<code>https://www.hesa.ac.uk/collection/coding-manual-tools/sicsocdata/soc-2010#five-digit</code>.</li>
-<li>Join the AS SOC codes and generate flags for potential qualifiers in
-the sample:
-<ol style="list-style-type: decimal">
-<li>All occupations that are part of 3-digit Minor groups that appear in
-LC AS.</li>
-<li>All occupations whose SOC code does not begin with 1 or 2.</li>
-<li>All occupations in the sectors that appear in LC AS.</li>
-</ol></li>
-</ul>
-<div id="notes-4" class="section level4">
-<h4>Notes</h4>
-<p>Approaches 1, 2, 3 give 100, 262, 58 4-digit occupations,
-respectively, out of 369 total.</p>
-</div>
-</div>
-<div id="soc-2-lfs-soc-distribution.r-1" class="section level3">
-<h3><code>SOC-2-LFS SOC Distribution.R</code></h3>
-<p>Creates and exports the distribution of occupations started
-2015-2020. The steps involve:</p>
-<ul>
-<li>Filtering the observations that started employment in the periods
-2015-2017 and 2018-2020 and are <em>still employed</em> during the
-survey (cannot be the case that employment is started in 2015 and ended
-shortly after, for example).</li>
-<li>Group by SOC3D and sum weights.</li>
-<li>Normalise the weights for each period, creating a distribution of
-difference 3 digit occupations.</li>
-</ul>
-<div id="notes-5" class="section level4">
-<h4>Notes</h4>
-<p>All observations that have -8 (No Answer) or -9 (N/A) in occupation
-codes are removed.</p>
-</div>
+<p>Decarbonization-industry had missing ads for some of the quarters,
+requiring imputing zero values. Given the negligible presence of the
+Decarbonization-industry skills, remove from future plots.</p>
 </div>
 </div>
 

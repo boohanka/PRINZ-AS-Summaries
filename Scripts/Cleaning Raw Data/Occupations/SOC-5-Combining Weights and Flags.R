@@ -8,8 +8,8 @@ rm(list = ls())
 # ============================================================================#
 # ============================================================================#
 
-df_as_soc <- read_csv("Data/Intermediate/SOC Flags - 1.csv")
-df_lfs_weights <- read_csv("Data/Intermediate/LFS SOC3D Distribution.csv")
+df_as_soc <- read_csv("Data/Intermediate/Occupations/SOC Restriction Flags.csv")
+df_weights <- read_csv("Data/Intermediate/Occupations/SOC Weights.csv")
 
 # ============================================================================#
 # ============================================================================#
@@ -32,19 +32,24 @@ soc4d_code_univ <- c(
 
 df_as_soc %<>%
   mutate(
-    lvl_6_7 = soc4d_code %in% soc4d_code_univ
+    flag_rqf = soc4d_code %in% soc4d_code_univ
   )
 
 # ============================================================================#
 # ============================================================================#
-# ==== # ==================== Add Occupation Weights =================== # ====
+# ==== # =============== Add Occupation Weights & Tidy ================= # ====
 # ============================================================================#
 # ============================================================================#
 
-df_as_soc %<>%
+df_soc <- df_as_soc %>%
   left_join(
-    df_lfs_weights, 
-    join_by(soc3d_code == sc10mmn)
+    df_weights, 
+    by = "soc3d_code"
+  )
+
+df_soc %<>%
+  select(
+    -c(n_ads_occ_1820, lfs_weight_1820, lfs_soc_share, lightcast_soc_share)
   )
 
 # ============================================================================#
@@ -54,10 +59,8 @@ df_as_soc %<>%
 # ============================================================================#
 
 exporting_csv <- function(df, name, dir) {
-  base_dir <- dir
-  df_exp <- df
-  exp_path <- file.path(base_dir, paste0(name, ".csv"))
-  write.csv(df_exp, file = exp_path, row.names = FALSE)
+  exp_path <- file.path(dir, paste0(name, ".csv"))
+  write.csv(df, file = exp_path, row.names = FALSE)
 }
 
-exporting_csv(df_as_soc, "SOC Sample Selection", "Data/Cleaned/Occupations")
+exporting_csv(df_soc, "SOC Flags and Weights", "Data/Cleaned/Occupations")

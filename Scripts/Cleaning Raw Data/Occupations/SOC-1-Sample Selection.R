@@ -8,28 +8,47 @@ rm(list = ls())
 # ============================================================================#
 # ============================================================================#
 
-df_as_soc <- read_csv("Data/Intermediate/List LC AS-SOC Manual Check.csv")
-df_soc <- read_xlsx("Data/Raw/Occupations/UKSOC Codes.xlsx")
+df_as_soc <- read_csv("Data/Raw/AS/AS-UKSOC.csv")
+df_as_skills <- read_csv("Data/Cleaned/AS/List AS Skills.csv")
+df_soc_list <- read_xlsx("Data/Raw/Occupations/UKSOC Codes.xlsx")
 
-colnames(df_soc) <- c("soc4d_code", "soc4d_desc")
+# Clean SOC List:
 
-df_soc %<>%
+colnames(df_soc_list) <- c("soc4d_code", "soc4d_desc")
+
+df_soc_list %<>%
   mutate(
     soc4d_code = as.numeric(soc4d_code),
     soc4d_desc = as.character(soc4d_desc)
   )
 
+# Clean AS SOC Crosswalk:
+
+colnames(df_as_soc)
+
+as_soc_colnames <- c(
+  "standard_reference",
+  "v",
+  "standard_name",
+  "route",
+  "soc4d_code",
+  "soc4d_desc"
+)
+
+colnames(df_as_soc) <- as_soc_colnames
+
+ 
 # ============================================================================#
 # ============================================================================#
 # ==== # ===================== Add 3 Digit SOCs ======================== # ====
 # ============================================================================#
 # ============================================================================#
 
-df_soc %<>%
+df_soc_list %<>%
   filter(nchar(soc4d_code) == 4) %>% 
   mutate(soc3d_code = substr(soc4d_code, 1, 3))
 
-f_assign_soc3d_desc <- function(df = df_soc) {
+f_assign_soc3d_desc <- function(df = df_soc_list) {
   
   soc3d_crosswalk <- c(
     "111" = "Chief executives and senior officials",
@@ -135,37 +154,46 @@ df_soc <- f_assign_soc3d_desc()
 
 # ============================================================================#
 # ============================================================================#
+# ==== # ===================== Extracting AS SOCs ====================== # ====
+# ============================================================================#
+# ============================================================================#
+
+# Take most recent crosswalk version:
+
+df_as_soc %<>%
+  filter(!is.na(soc4d_code)) %>% 
+  filter(!str_detect(standard_name, regex("degree", ignore_case = TRUE))) %>% 
+  group_by(standard_reference, standard_name) %>% 
+  slice_max(v, n = 1) %>% 
+  ungroup() %>% 
+  select(-v)
+
+as_soc4d <- df_as_soc$soc4d_code %>% unique()
+
+# set_as_soc3d <- substr(set_as_soc4d, 1, 3) %>% unique()
+# 
+# set_flag_as_soc <- df_soc_list %>% 
+#   filter(soc3d_code %in% set_as_soc3d) %>% 
+#   pull(soc4d_code) 
+
+# ============================================================================#
+# ============================================================================#
 # ==== # ================ Restricting SOCs on AS Sample ================ # ====
 # ============================================================================#
 # ============================================================================#
 
-as_soc4d <- df_as_soc$soc10_code
 
-df_soc %<>%
-  mutate(is_lcas = soc4d_code %in% as_soc4d)
-
-
-f_sample_restrictions <- function(df = df_soc) {
+f_sample_restrictions <- function(df = df_soc_list) {
   
-  # ~~~~~~~~~~~~~~~~~ # 
-  #       Flag 1      #
-  # ~~~~~~~~~~~~~~~~~ # 
+  # ~~~~~~~~~~~~~~~~~~~~~~ # 
+  #       Flag AS SOCs     #
+  # ~~~~~~~~~~~~~~~~~~~~~~ # 
   
-  # Identify 3-digit SOC codes present in LCAS dataset
-  flag_1_soc3d <- df %>% 
-    filter(is_lcas) %>% 
-    pull(soc3d_code) %>% 
-    unique()
+  flag_as_soc <- as_soc4d
   
-  # Identify corresponding 4-digit SOC codes
-  flag_1_soc4d <- df %>% 
-    filter(soc3d_code %in% flag_1_soc3d) %>% 
-    pull(soc4d_code) %>% 
-    unique()
-  
-  # ~~~~~~~~~~~~~~~~~ # 
-  #       Flag 3      #
-  # ~~~~~~~~~~~~~~~~~ # 
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
+  #       Flag LC Sectors      #
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
   
   transport_soc <- c(
     "1161", "1162", "3511", "3512", "3513", 
@@ -189,8 +217,8 @@ f_sample_restrictions <- function(df = df_soc) {
     "1255", "3565", "3567"
   )
   
-  # Combine all into a named list
-  flag_3_soc4d <- c(
+  # Combine all
+  flag_sector_soc <- c(
     transport_soc,
     buildings_soc,
     energy_soc
@@ -201,10 +229,10 @@ f_sample_restrictions <- function(df = df_soc) {
   # ~~~~~~~~~~~~~~~~~ # 
   
   df %<>% mutate(
-    soc4d_code = as.character(soc4d_code),  # Ensure soc4d_code is a character
-    flag_1 = soc4d_code %in% flag_1_soc4d,
-    flag_2 = !substr(soc4d_code, 1, 1) %in% c("1", "2"),
-    flag_3 = soc4d_code %in% flag_3_soc4d
+    soc4d_code = as.character(soc4d_code),  
+    flag_as_soc = soc4d_code %in% flag_as_soc,
+    flag_sector_soc = soc4d_code %in% flag_sector_soc,
+    flag_educ = !substr(soc4d_code, 1, 1) %in% c("1", "2")
   )
   
   return(df)
@@ -226,15 +254,16 @@ dist_socs <- df_soc_sample %>%
 
 # ============================================================================#
 # ============================================================================#
-# ==== # ========================== Export ============================== # ===
+# ==== # ========================== Export ============================= # ====
 # ============================================================================#
 # ============================================================================#
+
 
 exporting_csv <- function(df, name, dir) {
-  base_dir <- dir
-  df_exp <- df
-  exp_path <- file.path(base_dir, paste0(name, ".csv"))
-  write.csv(df_exp, file = exp_path, row.names = FALSE)
+  exp_path <- file.path(dir, paste0(name, ".csv"))
+  write.csv(df, file = exp_path, row.names = FALSE)
 }
 
-exporting_csv(df_soc_sample, "SOC Flags 1", "Data/Intermediate")
+exporting_csv(df_soc_sample, "SOC Restriction Flags", "Data/Intermediate/Occupations")
+
+  

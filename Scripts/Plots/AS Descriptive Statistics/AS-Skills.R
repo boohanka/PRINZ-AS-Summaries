@@ -8,9 +8,9 @@ rm(list = ls())
 # ============================================================================#
 # ============================================================================#
 
-df_as_skills <- read_csv("Data 2025/Cleaned/AS/List AS Skills.csv")
-df_lc_skills_starts <- read_csv("Data 2025/Cleaned/AS/LC-Skills-Starts-skill_q_g.csv")
-df_skills_starts <- read_csv("Data 2025/Cleaned/AS/Skills-Starts-skill_q_g.csv")
+df_as_skills <- read_csv("Data/Cleaned/AS/List AS Skills.csv")
+df_lc_skills_starts <- read_csv("Data/Cleaned/AS/LC-Skills-Starts-skill_q_g.csv")
+df_skills_starts <- read_csv("Data/Cleaned/AS/Skills-Starts-skill_q_g.csv")
 
 # ============================================================================#
 # ============================================================================#
@@ -36,12 +36,40 @@ dist_standards <- df_as_skills %>%
   select(standard_reference, standard_name, climate_related) %>% 
   distinct()
 
+num_degree_as <- df_as_skills %>% 
+  filter(str_detect(standard_name, regex("degree", ignore_case = TRUE))) %>% 
+  pull(standard_reference) %>% 
+  unique()
+
+num_as <- df_as_skills %>% pull(standard_reference) %>% unique()
+
 # ============================================================================#
 # ============================================================================#
 # ==== # =========================== Starts ============================ # ====
 # ============================================================================#
 # ============================================================================#
 
+as_starts <- df_skills_starts %>% 
+  select(
+    date, 
+    ttwa11cd, ttwa11nm,
+    st_code, standard_name,
+    starts
+  ) %>% 
+  distinct() %>% 
+  group_by(st_code, standard_name) %>% 
+  summarise(
+    starts = sum(starts, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+degree_as_starts <- as_starts %>% 
+  filter(str_detect(standard_name, regex("degree", ignore_case = TRUE))) %>% 
+  pull(starts) %>% sum()
+
+total_as_starts <- as_starts %>% 
+  pull(starts) %>% sum()
+ 
 top_15_lc_skills <- df_lc_skills_starts %>% 
   group_by(st_code, skill_id) %>% 
   summarise(

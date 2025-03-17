@@ -6,9 +6,9 @@ rm(list = ls())
 # ============================================================================#
 # ============================================================================#
 
-df_lfs_1517 <- read_dta("Data/Raw/LFS Weights/2015-2017/aps_3yr_jan15dec17_eul.dta")
+# df_lfs_1517 <- read_dta("Data/Raw/LFS Weights/2015-2017/aps_3yr_jan15dec17_eul.dta")
 df_lfs_1820 <- read_dta("Data/Raw/LFS Weights/2018-2020/aps_3yr_jan18dec20_eul.dta")
-colnames(df_lfs_1517) <- str_to_lower(colnames(df_lfs_1517))
+# colnames(df_lfs_1517) <- str_to_lower(colnames(df_lfs_1517))
 colnames(df_lfs_1820) <- str_to_lower(colnames(df_lfs_1820))
 
 # NOTE:
@@ -123,41 +123,11 @@ soc3d_crosswalk <- c(
 )
 
 
-
 # ============================================================================#
 # ============================================================================#
 # ==== # =========================== Clean ============================= # ====
 # ============================================================================#
 # ============================================================================#
-
-# 2015-2017 
-
-df_1517 <- df_lfs_1517 %>% 
-  select(
-    c(idref, pwta17c, ilodefr, sc10mmj, sc10mmn, conmpy, conmon, country)
-  )
-
-df_1517 %<>%
-  mutate(across(everything(), as.numeric)) %>% 
-  filter(
-    !if_any(c(sc10mmj, sc10mmn), ~ . == -9 | . == -8)
-  ) %>% 
-  filter(
-    country == 1 & conmpy %in% c(2015:2017) & ilodefr == 1
-  )
-
-df_1517_soc3d <- df_1517 %>% 
-  group_by(sc10mmn) %>% 
-  summarise(
-    wgt = sum(pwta17c), 
-    .groups = "drop"
-  ) %>% 
-  arrange(desc(wgt)) %>% 
-  mutate(
-    weight = (wgt/sum(wgt)) * 100
-  ) %>% 
-  select(-wgt)
-
 
 # 2018-2020 
 
@@ -178,42 +148,67 @@ df_1820 %<>%
 df_1820_soc3d <- df_1820 %>% 
   group_by(sc10mmn) %>% 
   summarise(
-    wgt = sum(pwta20c), 
+    lfs_weight_1820 = sum(pwta20c), 
     .groups = "drop"
   ) %>% 
-  arrange(desc(wgt)) %>% 
+  arrange(desc(lfs_weight_1820)) %>% 
   mutate(
-    weight = (wgt/sum(wgt)) * 100
-  ) %>% 
-  select(-wgt)
-
-
-# Combine
-
-lfs_soc3d_dist <- df_1517_soc3d %>% 
-  left_join(
-    df_1820_soc3d, by = "sc10mmn", suffix = c("1517", "1820")
+    lfs_soc_share = (lfs_weight_1820/sum(lfs_weight_1820)) 
   )
 
-# Also take simple mean to calculate average weights:
 
-lfs_soc3d_dist %<>%
-  mutate(
-    avg_weight = weight1517 * 0.5 + weight1820 * 0.5
-  )
+
+
 
 
 # ============================================================================#
 # ============================================================================#
-# ==== # ========================== Export ============================== # ===
+# ==== # ========================== Export ============================= # ====
 # ============================================================================#
 # ============================================================================#
 
 exporting_csv <- function(df, name, dir) {
-  base_dir <- dir
-  df_exp <- df
-  exp_path <- file.path(base_dir, paste0(name, ".csv"))
-  write.csv(df_exp, file = exp_path, row.names = FALSE)
+  exp_path <- file.path(dir, paste0(name, ".csv"))
+  write.csv(df, file = exp_path, row.names = FALSE)
 }
 
-exporting_csv(lfs_soc3d_dist, "LFS SOC3D Distribution", "Data/Intermediate")
+exporting_csv(df_1820_soc3d, "LFS SOC3D Distribution", "Data/Intermediate/Occupations")
+
+
+
+# ============================================================================#
+# ============================================================================#
+# ==== # ======================== Extra Code =========================== # ====
+# ============================================================================#
+# ============================================================================#
+
+
+# 
+# 
+# # 2015-2017 
+# 
+# df_1517 <- df_lfs_1517 %>% 
+#   select(
+#     c(idref, pwta17c, ilodefr, sc10mmj, sc10mmn, conmpy, conmon, country)
+#   )
+# 
+# df_1517 %<>%
+#   mutate(across(everything(), as.numeric)) %>% 
+#   filter(
+#     !if_any(c(sc10mmj, sc10mmn), ~ . == -9 | . == -8)
+#   ) %>% 
+#   filter(
+#     country == 1 & conmpy %in% c(2015:2017) & ilodefr == 1
+#   )
+# 
+# df_1517_soc3d <- df_1517 %>% 
+#   group_by(sc10mmn) %>% 
+#   summarise(
+#     wgt = sum(pwta17c), 
+#     .groups = "drop"
+#   ) %>% 
+#   arrange(desc(wgt)) %>% 
+#   mutate(
+#     weight = (wgt/sum(wgt)) * 100
+#   ) %>% 
+#   select(-wgt)
